@@ -9,4 +9,5 @@ dependencies = [
     "networkx>=3.6.1",
     "numpy>=2.4.5",
     "scikit-rf>=1.12.0",
+    "tqdm>=4.67.3",
 ]
