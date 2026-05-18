@@ -1,0 +1,12 @@
+[project]
+name = "rfsims"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.9",
+    "networkx>=3.6.1",
+    "numpy>=2.4.5",
+    "scikit-rf>=1.12.0",
+]
