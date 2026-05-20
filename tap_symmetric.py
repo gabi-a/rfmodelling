@@ -8,7 +8,7 @@ from utils import ideal_180_hybrid
 # Parameters
 # ------------------------------------------------------------
 
-f0 = 500e6
+f0 = 492e6
 w0 = 2 * np.pi * f0
 
 Q0 = 600
@@ -31,7 +31,7 @@ Rhalf = Rpar / (Ngaps / 2)**2
 
 Zdiff_target = 2 * Z0
 
-Ca = Cgap * Rhalf * (Zdiff_target * beta / Rhalf)**0.5 / (Zdiff_target * beta)
+Ca = 2 * Cgap / (1 - (Zdiff_target * beta / Rgap)**0.5)
 Cb = 1 / (1 / Cgap - 1 / Ca)
 
 print("Ca = {:.2f} pF".format(Ca * 1e12))
@@ -96,11 +96,11 @@ def make_tapped_lgr(
         # Segment 2
         [(Cg2, 1), (R2, 0)],
         [(R2, 1), (L2, 0)],
-        [(L2, 1), (Cg3_A, 0)],
-        [(Cg3_A, 1), (Cg3_B, 0), (balun, 2)],
+        [(L2, 1), (Cg3_B, 0)],
+        [(Cg3_B, 1), (Cg3_A, 0), (balun, 2)],
 
         # Segment 3
-        [(Cg3_B, 1), (R3, 0)],
+        [(Cg3_A, 1), (R3, 0)],
         [(R3, 1), (L3, 0)],
         [(L3, 1), (Cg4, 0)],
 

@@ -8,11 +8,11 @@ from utils import ideal_180_hybrid
 # Parameters
 # ------------------------------------------------------------
 
-f0 = 500e6
+f0 = 492e6
 w0 = 2 * np.pi * f0
 
 Q0 = 600
-beta = 1.0
+beta = 2
 
 L = 21.4e-9
 Z0 = 50
@@ -26,14 +26,28 @@ Rs_total = w0 * L / Q0
 Rseg = Rs_total / Ngaps
 
 Rpar = Q0 * w0 * L
-Rgap = Rpar / Ngaps**2
+Rgap  = Rpar / Ngaps**2
+Rhalf = Rpar / (Ngaps / 2)**2
 
 Zdiff_target = 2 * Z0
 
-Ca = Cgap * (Rgap / (Zdiff_target * beta))**0.5 
-Cb = 1 / (1 / Cgap - 1 / Ca)
+N_caps = 1
+C_single_cap = Cgap / N_caps
+Clump = (N_caps - 1) * C_single_cap
+Csplit = Cgap - Clump    # Equivalent to C_single_cap
 
-print(Cgap)
+
+Ca = 2 * Cgap / (1 - (Zdiff_target * beta / Rgap)**0.5) / N_caps
+# Equivalent defintion:
+#   Ca = 2 * Csplit / (1 - 2 * (beta * Zdiff_target / Rhalf)**0.5) 
+Cb = 1 / (1 / Csplit - 1 / Ca)
+
+print("Ca = {:.2f} pF".format(Ca * 1e12))
+print("Cb = {:.2f} pF".format(Cb * 1e12))
+
+# Check total adds to gap cap
+print(((1 / Ca + 1 / Cb)**-1 + Clump) * 1e12, "pF total across gap")
+print(Cgap * 1e12, "pF original gap cap")
 
 # ------------------------------------------------------------
 # Frequency and media
@@ -43,7 +57,7 @@ freq = rf.Frequency(start=f0-5e6, stop=f0+5e6, unit='Hz', npoints=3001)
 media = rf.media.DefinedGammaZ0(freq, z0=Z0) # type: ignore
 
 def make_tapped_lgr(
-        media, freq, Cgap, Rseg, Lseg, Z0, Ca, Cb) -> Circuit:
+        media, freq, Cgap, Rseg, Lseg, Z0, Ca, Cb, Clump) -> Circuit:
     """
     Floating 4-gap LGR driven through an ideal 180-degree hybrid.
     """
@@ -59,8 +73,14 @@ def make_tapped_lgr(
     Cg1_B = media.capacitor(Cb, name='Cg1_B')
 
     Cg2 = media.capacitor(Cgap, name='Cg2')
-    Cg3 = media.capacitor(Cgap, name='Cg3')
+
+    Cg3_A = media.capacitor(Ca, name='Cg3_A')
+    Cg3_B = media.capacitor(Cb, name='Cg3_B')
+
     Cg4 = media.capacitor(Cgap, name='Cg4')
+
+    C_lump1 = media.capacitor(Clump, name='Clump1')
+    C_lump3 = media.capacitor(Clump, name='Clump3')
 
     R1 = media.resistor(Rseg, name='R1')
     R2 = media.resistor(Rseg, name='R2')
@@ -81,9 +101,8 @@ def make_tapped_lgr(
         [(Riso, 1), (gnd, 0)],
 
         # Balun connected to tapped point in LGR
-        [(balun, 1), (Cg1_A, 0), (L4, 1)],
-        [(balun, 2), (Cg1_A, 1), (Cg1_B, 0)],
-        [(Cg1_B, 1), (R1, 0)],
+        [(balun, 1), (Cg1_B, 0), (Cg1_A, 1)],
+        [(Cg1_B, 1), (R1, 0), (C_lump1, 1)],
 
         # Segment 1
         [(R1, 1), (L1, 0)],
@@ -92,16 +111,18 @@ def make_tapped_lgr(
         # Segment 2
         [(Cg2, 1), (R2, 0)],
         [(R2, 1), (L2, 0)],
-        [(L2, 1), (Cg3, 0)],
+        [(L2, 1), (Cg3_B, 0), (C_lump3, 0)],
+        [(Cg3_B, 1), (Cg3_A, 0), (balun, 2)],
 
         # Segment 3
-        [(Cg3, 1), (R3, 0)],
+        [(Cg3_A, 1), (R3, 0), (C_lump3, 1)],
         [(R3, 1), (L3, 0)],
         [(L3, 1), (Cg4, 0)],
 
         # Segment 4, closing floating loop
         [(Cg4, 1), (R4, 0)],
         [(R4, 1), (L4, 0)],
+        [(L4, 1), (Cg1_A, 0), (C_lump1, 0)],
     ]
 
     return Circuit(cnx)
@@ -115,6 +136,7 @@ circuit = make_tapped_lgr(
     Z0=Z0,
     Ca=Ca,
     Cb=Cb,
+    Clump=Clump,
 )
 
 network = circuit.network
