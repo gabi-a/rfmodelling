@@ -31,13 +31,12 @@ Rhalf = Rpar / (Ngaps / 2)**2
 
 Zdiff_target = 2 * Z0
 
-N_caps = 1
-C_single_cap = Cgap / N_caps
-Clump = (N_caps - 1) * C_single_cap
-Csplit = Cgap - Clump    # Equivalent to C_single_cap
+N_rows = 5 # How many rows of capacitors across the gap (1 row gets split into the tap, the rest are lumped together)
+Csplit = Cgap / N_rows
+Clump = (N_rows - 1) * Csplit
 
 
-Ca = 2 * Cgap / (1 - (Zdiff_target * beta / Rgap)**0.5) / N_caps
+Ca = 2 * Cgap / (1 - (Zdiff_target * beta / Rgap)**0.5) / N_rows
 # Equivalent defintion:
 #   Ca = 2 * Csplit / (1 - 2 * (beta * Zdiff_target / Rhalf)**0.5) 
 Cb = 1 / (1 / Csplit - 1 / Ca)
