@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.optimize import minimize, differential_evolution
 import skrf as rf
-from skrf.circuit import Circuit
-import matplotlib.pyplot as plt
 
 # ------------------------------------------------------------
 # Parameters

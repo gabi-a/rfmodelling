@@ -3,6 +3,8 @@ from scipy.optimize import minimize, differential_evolution
 import skrf as rf
 from skrf.circuit import Circuit
 import matplotlib.pyplot as plt
+from utils import make_balanced_tuned_lgr
+
 # ------------------------------------------------------------
 # Parameters
 # ------------------------------------------------------------
@@ -248,7 +250,7 @@ shunt_kind = best["shunt_kind"]
 series_value = best["series_value"]
 shunt_value = best["shunt_value"]
 
-from utils import make_balanced_tuned_lgr
+
 circuit_best = make_balanced_tuned_lgr(
     media=media,
     freq=freq,
