@@ -154,6 +154,9 @@ circuit.plot_graph(
     edge_fontsize=5,
 )
 
+from utils import plot_circuit_3d
+plot_circuit_3d(circuit)
+
 plt.figure()
 plt.plot(freq.f / 1e6, s11_db, lw=2)
 plt.axvline(f0 / 1e6, linestyle='--', label='500 MHz')

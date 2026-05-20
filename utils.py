@@ -198,3 +198,131 @@ def make_balanced_tuned_lgr(media, freq, series_kind, series_value, shunt_kind, 
     ]
 
     return Circuit(cnx)
+
+
+import networkx as nx
+import plotly.graph_objects as go
+
+
+def plot_circuit_3d(circuit):
+    """Extracts the graph from a scikit-rf Circuit object and plots it
+
+    in an interactive 3D window using Plotly.
+    """
+    # 1. Extract the underlying NetworkX graph
+    G = circuit.G
+
+    # 2. Compute 3D positions using a spring layout engine
+    pos = nx.spring_layout(G, dim=3, seed=42)
+
+    # --- Prepare Node Data ---
+    Xn, Yn, Zn = [], [], []
+    node_colors = []
+    node_labels = []
+
+    for node in G.nodes():
+        Xn.append(pos[node][0])
+        Yn.append(pos[node][1])
+        Zn.append(pos[node][2])
+        node_labels.append(str(node))
+
+        # Color-code nodes dynamically based on type
+        node_str = str(node).lower()
+        if "port" in node_str:
+            node_colors.append("#FF5722")  # Vibrant Orange for External Ports
+        elif "ground" in node_str or "gnd" in node_str:
+            node_colors.append("#4CAF50")  # Green for Ground intersections
+        else:
+            node_colors.append("#2196F3")  # Blue for regular RF Components
+
+    # --- Prepare Edge Data & Midpoint Labels ---
+    Xe, Ye, Ze = [], [], []
+    Xm, Ym, Zm = [], [], []
+    edge_labels = []
+
+    for u, v, d in G.edges(data=True):
+        # Line paths (separated by None so Plotly draws individual lines)
+        Xe += [pos[u][0], pos[v][0], None]
+        Ye += [pos[u][1], pos[v][1], None]
+        Ze += [pos[u][2], pos[v][2], None]
+
+        # Calculate midpoints for edge labels
+        Xm.append((pos[u][0] + pos[v][0]) / 2)
+        Ym.append((pos[u][1] + pos[v][1]) / 2)
+        Zm.append((pos[u][2] + pos[v][2]) / 2)
+
+        # Clean up the edge port labels from scikit-rf data
+        port_num = d.get("port", "")
+        edge_labels.append(f"P{port_num}" if port_num != "" else "")
+
+    # --- Build Plotly Traces ---
+    # Edges (Lines)
+    trace_edges = go.Scatter3d(
+        x=Xe,
+        y=Ye,
+        z=Ze,
+        mode="lines",
+        line=dict(color="#CFD8DC", width=3),
+        hoverinfo="none",
+    )
+
+    # Nodes (Markers + Labels)
+    trace_nodes = go.Scatter3d(
+        x=Xn,
+        y=Yn,
+        z=Zn,
+        mode="markers+text",
+        marker=dict(
+            symbol="circle",
+            size=10,
+            color=node_colors,
+            line=dict(color="#FFFFFF", width=1),
+        ),
+        text=node_labels,
+        textposition="top center",
+        hoverinfo="text",
+        textfont=dict(size=11, color="#263238"),
+    )
+
+    # Edge Labels (Text centered on the connections)
+    trace_edge_labels = go.Scatter3d(
+        x=Xm,
+        y=Ym,
+        z=Zm,
+        mode="text",
+        text=edge_labels,
+        textposition="middle center",  # <-- Fixed this line
+        hoverinfo="none",
+        textfont=dict(size=9, color="#E91E63"),
+    )
+
+    # --- Layout & Axis Styling ---
+    # We hide background grids to keep the topology clear
+    no_axis = dict(
+        showbackground=False,
+        showline=False,
+        zeroline=False,
+        showgrid=False,
+        showticklabels=False,
+        title="",
+    )
+
+    layout = go.Layout(
+        title=dict(
+            text="Interactive 3D Circuit Topology",
+            x=0.5,
+            font=dict(size=16),
+        ),
+        width=900,
+        height=800,
+        showlegend=False,
+        scene=dict(xaxis=no_axis, yaxis=no_axis, zaxis=no_axis),
+        margin=dict(t=60, b=10, l=10, r=10),
+        hovermode="closest",
+    )
+
+    # Compile and show
+    fig = go.Figure(
+        data=[trace_edges, trace_nodes, trace_edge_labels], layout=layout
+    )
+    fig.show()
