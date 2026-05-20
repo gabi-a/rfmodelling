@@ -35,7 +35,7 @@ N_rows = 5 # How many rows of capacitors across the gap (1 row gets split into t
 Csplit = Cgap / N_rows
 Clump = (N_rows - 1) * Csplit
 
-
+# Derive this from tap_symmetric by considering how adding rows of capacitors transforms Ca -> Ca / N_rows. 
 Ca = 2 * Cgap / (1 - (Zdiff_target * beta / Rgap)**0.5) / N_rows
 # Equivalent defintion:
 #   Ca = 2 * Csplit / (1 - 2 * (beta * Zdiff_target / Rhalf)**0.5) 
